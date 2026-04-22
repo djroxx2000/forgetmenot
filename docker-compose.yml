@@ -1,0 +1,64 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: forgetmenot-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      QDRANT__SERVICE__GRPC_PORT: 6334
+    healthcheck:
+      test: ["CMD", "/qdrant/qdrant", "--healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  neo4j:
+    image: neo4j:5-community
+    container_name: forgetmenot-neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    environment:
+      NEO4J_AUTH: neo4j/memzero_dev
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_usage__report_enabled: "false"
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p memzero_dev 'RETURN 1' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: forgetmenot-postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: memzero
+      POSTGRES_USER: memzero
+      POSTGRES_PASSWORD: memzero_dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U memzero -d memzero"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  qdrant_data:
+  neo4j_data:
+  neo4j_logs:
+  postgres_data:
