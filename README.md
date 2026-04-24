@@ -263,3 +263,5 @@ pytest -v
 **v0.2+**: Codebase indexing engine (tree-sitter + per-language native parser overrides, Go for performance), CLI capture tool (Go), Chrome extension (TypeScript), work ticket engine (GUS/Jira).
 
 **Final goal**: Autonomous agent system that takes work requests and executes them with historical + repo-aware context.
+
+> Vibe Coded with ❤️ by Dhananjay Shettigar
