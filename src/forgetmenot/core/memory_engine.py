@@ -80,7 +80,7 @@ def build_mem0_config(settings: Settings | None = None) -> dict:
             "config": {
                 "model": settings.mem0_llm_model,
                 "temperature": 0.1,
-                "max_tokens": 1024,
+                "max_tokens": 8096,
             },
         },
         "embedder": {
@@ -122,6 +122,32 @@ class MemoryEngine:
                      config["embedder"]["provider"],
                      config.get("graph_store", {}).get("provider", "none"))
         self._mem0 = Memory.from_config(config)
+        self._disable_thinking_for_ollama()
+
+    def _disable_thinking_for_ollama(self) -> None:
+        """Force `think=False` on every Ollama chat call.
+
+        Reasoning models (qwen3, qwen3.5) emit thousands of hidden 'thinking'
+        tokens before the visible response, which eats the num_predict budget
+        and makes Mem0's pipeline 10-20x slower or return empty. Mem0's
+        ollama.py adapter doesn't expose `think`, so we wrap the raw client.
+        """
+        if self._settings.mem0_llm_provider != "ollama":
+            return
+        try:
+            client = self._mem0.llm.client
+        except AttributeError:
+            logger.warning("Could not access Ollama client to disable thinking")
+            return
+
+        original_chat = client.chat
+
+        def chat_no_think(*args, **kwargs):
+            kwargs.setdefault("think", False)
+            return original_chat(*args, **kwargs)
+
+        client.chat = chat_no_think
+        logger.info("Disabled Ollama 'thinking' for reasoning models (qwen3, qwen3.5)")
 
     @property
     def mem0(self) -> Memory:

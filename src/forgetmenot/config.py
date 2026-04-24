@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     # Ollama embeddings
     ollama_base_url: str = "http://localhost:11434"
-    embedding_model: str = "embeddinggemma"
+    embedding_model: str = "nomic-embed-text"
     embedding_dims: int = 768
 
     # Mem0 LLM (for fact extraction)
